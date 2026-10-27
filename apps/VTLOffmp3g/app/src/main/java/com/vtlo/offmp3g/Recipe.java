@@ -169,6 +169,17 @@ public final class Recipe {
             .step("-i <input> -c:v libvpx-vp9 -b:v {vbitrate} -c:a libopus <output>")
             .out("webm", "video/webm")
             .build(),
+        new Builder("webm_vpre", TRANSCODE, "MP4 → WebM (VP8, libvpx preset)")
+            .desc("Uses FFmpeg's bundled libvpx presets: libvpx-360p, libvpx-720p, libvpx-720p50_60, "
+                + "libvpx-1080p, libvpx-1080p50_60. The presets favour quality (cpu-used=0), so encoding is slow.")
+            .orig("ffmpeg -i input.mp4 -vpre libvpx-720p -c:a libopus -b:a 128k output.webm")
+            .video()
+            .param("preset", "Preset", "libvpx-720p")
+            // The presets set a global b=..., which libopus rejects unless the audio bitrate is explicit.
+            .param("abitrate", "Audio bitrate", "128k")
+            .step("-i <input> -vpre {preset} -c:a libopus -b:a {abitrate} <output>")
+            .out("webm", "video/webm")
+            .build(),
         new Builder("remux", TRANSCODE, "Remux only (change container)")
             .desc("No re-encoding, no quality loss.")
             .orig("ffmpeg -i input.mkv -c copy output.mp4")

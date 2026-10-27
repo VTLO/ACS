@@ -14,6 +14,7 @@ import com.arthenica.ffmpegkit.FFprobeKit;
 import com.arthenica.ffmpegkit.MediaInformation;
 import com.arthenica.ffmpegkit.MediaInformationSession;
 import com.arthenica.ffmpegkit.ReturnCode;
+import com.arthenica.ffmpegkit.Signal;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,6 +64,8 @@ public final class Job {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final StringBuilder log = new StringBuilder();
     private final List<Listener> listeners = new ArrayList<>();
+    /** Mirror of the log on disk, so a crash report can show what ffmpeg was doing. */
+    private final Writer journal;
 
     private volatile State state = State.RUNNING;
     private volatile String status = "Starting…";
@@ -80,6 +83,7 @@ public final class Job {
         this.recipe = recipe;
         this.picks = picks;
         this.commandText = commandText;
+        this.journal = CrashReport.openJournal(recipe, commandText);
         this.dir = new File(new File(app.getCacheDir(), "jobs"), String.valueOf(System.currentTimeMillis()));
         //noinspection ResultOfMethodCallIgnored
         dir.mkdirs();
@@ -155,9 +159,35 @@ public final class Job {
     /** Loads FFmpegKit's native libraries on first use. */
     private static synchronized void initFFmpeg(Context context) {
         if (ffmpegReady) return;
+        // By default ffmpeg installs handlers for these signals and calls exit() after a few of
+        // them, which kills the whole app. Leave them to Android; FFmpegKit cancels via a flag.
+        for (Signal signal : Signal.values()) FFmpegKitConfig.ignoreSignal(signal);
         // libass (burned-in subtitles) needs a font directory on Android.
         FFmpegKitConfig.setFontDirectory(context, "/system/fonts", null);
+        // -vpre looks up <name>.ffpreset in $FFMPEG_DATADIR.
+        FFmpegKitConfig.setEnvironmentVariable("FFMPEG_DATADIR", installPresets(context).getAbsolutePath());
         ffmpegReady = true;
+    }
+
+    /** Copies the bundled .ffpreset files (assets/ffpresets) to a real directory. */
+    private static File installPresets(Context context) {
+        File dir = new File(context.getFilesDir(), "ffpresets");
+        //noinspection ResultOfMethodCallIgnored
+        dir.mkdirs();
+        try {
+            String[] names = context.getAssets().list("ffpresets");
+            if (names != null) {
+                for (String name : names) {
+                    try (InputStream in = context.getAssets().open("ffpresets/" + name);
+                         OutputStream out = new FileOutputStream(new File(dir, name))) {
+                        copy(in, out);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            android.util.Log.w("VTLOffmp3g", "Could not install ffmpeg presets", e);
+        }
+        return dir;
     }
 
     private void run() {
@@ -320,11 +350,22 @@ public final class Job {
         synchronized (log) {
             log.append(s);
             if (log.length() > MAX_LOG_CHARS) log.delete(0, log.length() - MAX_LOG_CHARS);
+            if (journal != null) {
+                try {
+                    journal.write(s);
+                    journal.flush();
+                } catch (IOException ignored) {
+                    // The journal is best effort.
+                }
+            }
         }
         notifyUpdate();
     }
 
     private void finish(State s, String message) {
+        synchronized (log) {
+            CrashReport.closeJournal(journal, message);
+        }
         status = message;
         state = s;
         notifyUpdate();

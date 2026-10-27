@@ -188,6 +188,13 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
         }
     }
 
+    /** Test hook: behaves as if the user picked {@code uris} for input {@code key}. */
+    @androidx.annotation.VisibleForTesting
+    void pickForTest(String key, List<Uri> uris) {
+        pendingPick = key;
+        onPicked(uris);
+    }
+
     private void onPicked(List<Uri> uris) {
         Recipe.Input in = pendingPick == null ? null : recipe.findInput(pendingPick);
         if (in == null) return;
