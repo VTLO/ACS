@@ -40,10 +40,39 @@ public class MainActivity extends AppCompatActivity {
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(new Adapter(rows));
 
+        String crash = CrashReport.collect(this);
+        if (crash != null) showCrashReport(crash);
+
         if (Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
         }
+    }
+
+    private void showCrashReport(String report) {
+        TextView text = new TextView(this);
+        text.setText(report);
+        text.setTextIsSelectable(true);
+        text.setTypeface(android.graphics.Typeface.MONOSPACE);
+        text.setTextSize(11);
+        int pad = Math.round(16 * getResources().getDisplayMetrics().density);
+        text.setPadding(pad, pad / 2, pad, 0);
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.addView(text);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("VTLOffmp3g stopped unexpectedly last time")
+            .setView(scroll)
+            .setPositiveButton("Share", (d, w) -> startActivity(Intent.createChooser(
+                new Intent(Intent.ACTION_SEND).setType("text/plain")
+                    .putExtra(Intent.EXTRA_SUBJECT, "VTLOffmp3g crash report")
+                    .putExtra(Intent.EXTRA_TEXT, report), "Share crash report")))
+            .setNeutralButton("Copy", (d, w) -> {
+                android.content.ClipboardManager cm = getSystemService(android.content.ClipboardManager.class);
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("VTLOffmp3g crash report", report));
+                android.widget.Toast.makeText(this, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Close", null)
+            .show();
     }
 
     private final class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
