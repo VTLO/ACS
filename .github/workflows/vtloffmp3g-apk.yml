@@ -1,0 +1,32 @@
+name: VTLOffmp3g APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/VTLOffmp3g/**'
+      - '.github/workflows/vtloffmp3g-apk.yml'
+  pull_request:
+    paths:
+      - 'apps/VTLOffmp3g/**'
+      - '.github/workflows/vtloffmp3g-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/VTLOffmp3g
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      # ubuntu-latest ships the Android SDK (ANDROID_HOME); AGP installs missing packages itself.
+      - name: Build APKs
+        run: ./gradlew assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VTLOffmp3g-apks
+          path: apps/VTLOffmp3g/app/build/outputs/apk/release/*.apk
