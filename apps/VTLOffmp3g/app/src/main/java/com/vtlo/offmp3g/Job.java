@@ -144,6 +144,11 @@ public final class Job {
         if (id != -1) FFmpegKit.cancel(id);
     }
 
+    /** Adds an app message (not ffmpeg output) to the job log. */
+    void note(String message) {
+        appendLog("\n[VTLOffmp3g] " + message + "\n");
+    }
+
     public void addListener(Listener l) {
         listeners.add(l);
     }
