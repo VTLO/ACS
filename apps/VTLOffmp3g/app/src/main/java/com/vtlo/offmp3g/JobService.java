@@ -13,9 +13,15 @@ import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
-import androidx.core.content.ContextCompat;
 
-/** Foreground service that keeps the process alive while a long encode runs. */
+/**
+ * Keeps the process alive with a progress notification while a long encode runs.
+ *
+ * Going foreground is best effort: the job runs on its own thread either way. The service is
+ * started with plain startService() (the user just tapped Run, so the app is in the foreground),
+ * which unlike startForegroundService() does not crash the app if startForeground() is refused,
+ * as Android 17 does for some foreground service types.
+ */
 public class JobService extends Service implements Job.Listener {
 
     private static final String CHANNEL = "jobs";
@@ -25,7 +31,13 @@ public class JobService extends Service implements Job.Listener {
     private NotificationManager nm;
 
     static void start(Context context) {
-        ContextCompat.startForegroundService(context, new Intent(context, JobService.class));
+        try {
+            context.startService(new Intent(context, JobService.class));
+        } catch (RuntimeException e) {
+            // e.g. IllegalStateException when the app is not in the foreground; the job still runs.
+            Job current = Job.current();
+            if (current != null) current.note("Background notification unavailable: " + e);
+        }
     }
 
     @Override
@@ -40,15 +52,8 @@ public class JobService extends Service implements Job.Listener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        int type = 0;
-        if (Build.VERSION.SDK_INT >= 35) {
-            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROCESSING;
-        } else if (Build.VERSION.SDK_INT >= 29) {
-            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC;
-        }
         Job current = Job.current();
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, build(current), type);
-        if (current == null || current.state() != Job.State.RUNNING) {
+        if (current == null || current.state() != Job.State.RUNNING || !goForeground(current)) {
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -60,6 +65,33 @@ public class JobService extends Service implements Job.Listener {
             if (job.state() != Job.State.RUNNING) onJobUpdate(job);
         }
         return START_NOT_STICKY;
+    }
+
+    /** Tries the fitting foreground service types in order; false if Android refuses them all. */
+    private boolean goForeground(Job current) {
+        int[] types;
+        if (Build.VERSION.SDK_INT >= 35) {
+            types = new int[]{ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROCESSING,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC};
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            types = new int[]{ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC};
+        } else {
+            types = new int[]{0};
+        }
+        for (int type : types) {
+            try {
+                ServiceCompat.startForeground(this, NOTIFICATION_ID, build(current), type);
+                return true;
+            } catch (RuntimeException e) {
+                // InvalidForegroundServiceTypeException, ForegroundServiceStartNotAllowedException,
+                // SecurityException, ...: report it and try the next type.
+                if (current != null) current.note("Foreground service type " + type + " refused: " + e);
+            }
+        }
+        if (current != null) {
+            current.note("Running without the background notification; keep the app open until the job ends.");
+        }
+        return false;
     }
 
     @Override
