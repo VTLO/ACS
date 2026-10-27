@@ -23,10 +23,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      # Used to fix FFmpegKit's libavdevice.so at build time (see app/build.gradle).
+      - name: Install patchelf
+        run: sudo apt-get update -q && sudo apt-get install -y -q patchelf
       # ubuntu-latest ships the Android SDK (ANDROID_HOME); AGP installs missing packages itself.
-      - name: Build APKs
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build APKs and run unit tests
+        run: ./gradlew assembleDebug assembleRelease testDebugUnitTest --no-daemon
+      - name: Check native libraries load (symbols, 16 KB alignment)
+        run: |
+          NDK="$ANDROID_HOME/ndk/27.2.12479018"
+          for apk in app/build/outputs/apk/*/*.apk; do
+            python3 tools/check_native_libs.py "$NDK" 24 "$apk"
+          done
+          python3 tools/check_alignment.py app/build/outputs/apk/*/*.apk
       - uses: actions/upload-artifact@v4
         with:
           name: VTLOffmp3g-apks
-          path: apps/VTLOffmp3g/app/build/outputs/apk/release/*.apk
+          path: apps/VTLOffmp3g/app/build/outputs/apk/*/*.apk

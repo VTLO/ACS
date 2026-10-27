@@ -5,6 +5,7 @@ plugins {
 android {
     namespace 'com.vtlo.offmp3g'
     compileSdk 35
+    ndkVersion '27.2.12479018'
 
     defaultConfig {
         applicationId 'com.vtlo.offmp3g'
@@ -12,6 +13,7 @@ android {
         targetSdk 35
         versionCode 1
         versionName '1.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
@@ -37,11 +39,67 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                // Skip loading FFmpegKit's native libraries on the JVM.
+                systemProperty 'enable.ffmpeg.kit.test.mode', 'true'
+            }
+        }
+    }
+
     packagingOptions {
         jniLibs {
             useLegacyPackaging false
+            // llvm-strip would re-layout the patchelf'ed file and misalign its new segment
+            // (see the patch step below). The library carries no debug info anyway.
+            keepDebugSymbols += '**/libavdevice*.so'
         }
     }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+}
+
+// The FFmpegKit build's libavdevice.so uses OpenSL ES and SDL's HIDAPI backend without
+// declaring the libraries that provide them, so Android refuses to load it and the app
+// crashes on launch. Add the missing DT_NEEDED entries: the system libOpenSLES.so and our
+// HIDAPI stubs (src/main/cpp). Needs patchelf >= 0.17 on the PATH (pip install patchelf).
+def patchelfBinary = providers.gradleProperty('patchelf').getOrElse('patchelf')
+
+tasks.matching { it.name ==~ /merge\w*NativeLibs/ }.configureEach { task ->
+    task.doLast {
+        def libs = task.outputs.files.asFileTree.matching { include '**/libavdevice*.so' }.files
+        libs.each { File lib ->
+            def needed = runPatchelf(patchelfBinary, ['--print-needed', lib.path]).readLines()
+            def add = ['libOpenSLES.so', 'libvtlo_hidstub.so'].findAll { !needed.contains(it) }
+            if (add.isEmpty()) return
+            def args = ['--page-size', '16384']
+            add.each { args += ['--add-needed', it] }
+            runPatchelf(patchelfBinary, args + [lib.path])
+            logger.lifecycle("Patched ${lib.parentFile.name}/${lib.name}: added ${add.join(', ')}")
+        }
+    }
+}
+
+static String runPatchelf(String binary, List<String> args) {
+    Process process
+    try {
+        process = ([binary] + args).execute()
+    } catch (IOException e) {
+        throw new GradleException("patchelf is required to build VTLOffmp3g (pip install patchelf, " +
+            "or apt install patchelf), or pass -Ppatchelf=/path/to/patchelf", e)
+    }
+    def out = new StringBuilder(), err = new StringBuilder()
+    process.waitForProcessOutput(out, err)
+    if (process.exitValue() != 0) {
+        throw new GradleException("patchelf ${args.join(' ')} failed: ${err}")
+    }
+    return out.toString()
 }
 
 dependencies {
@@ -52,4 +110,12 @@ dependencies {
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.core:core:1.13.1'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+    testImplementation 'androidx.test:core:1.6.1'
+
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }

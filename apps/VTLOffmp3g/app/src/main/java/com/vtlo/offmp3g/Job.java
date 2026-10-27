@@ -150,8 +150,21 @@ public final class Job {
 
     // ------------------------------------------------------------------------------------------
 
+    private static boolean ffmpegReady;
+
+    /** Loads FFmpegKit's native libraries on first use. */
+    private static synchronized void initFFmpeg(Context context) {
+        if (ffmpegReady) return;
+        // libass (burned-in subtitles) needs a font directory on Android.
+        FFmpegKitConfig.setFontDirectory(context, "/system/fonts", null);
+        ffmpegReady = true;
+    }
+
     private void run() {
         try {
+            status = "Loading FFmpeg";
+            notifyUpdate();
+            initFFmpeg(app);
             Map<String, String> copied = prepareInputs();
             if (cancelRequested) { finish(State.CANCELLED, "Cancelled"); return; }
             probeDuration();
@@ -196,9 +209,10 @@ public final class Job {
             }
             timeMs = durationMs;
             finish(State.DONE, recipe.outputKind == Recipe.OutputKind.NONE ? "Stream finished" : "Done");
-        } catch (Exception e) {
-            appendLog("\nERROR: " + e.getMessage() + "\n");
-            finish(State.FAILED, e.getMessage());
+        } catch (Throwable e) {
+            // Also catches native-library load errors so they are reported instead of crashing.
+            appendLog("\nERROR: " + e + (e.getCause() != null ? "\nCaused by: " + e.getCause() : "") + "\n");
+            finish(State.FAILED, e.getMessage() != null ? e.getMessage() : e.toString());
         }
     }
 

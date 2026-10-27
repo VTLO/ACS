@@ -21,7 +21,15 @@ or opened. Long encodes keep running in the background with a progress notificat
 
 ## Build
 
-Requirements: JDK 17+, Android SDK (platform 35).
+Requirements: JDK 17+, Android SDK (platform 35, NDK 27.2.12479018, CMake — Gradle installs
+missing SDK packages itself) and [patchelf](https://github.com/NixOS/patchelf) ≥ 0.17 on the
+`PATH` (`pip install patchelf`).
+
+Why patchelf: the FFmpegKit build's `libavdevice.so` uses OpenSL ES and SDL's HIDAPI backend
+without declaring the libraries that provide them, so Android refuses to load it
+(`cannot locate symbol "PLATFORM_hid_write"`) and the app would crash on launch. The build adds
+the missing dependencies: the system `libOpenSLES.so` and a small stub library
+(`app/src/main/cpp`) for the HIDAPI functions, which ffmpeg never calls.
 
 ```sh
 cd apps/VTLOffmp3g
@@ -31,6 +39,15 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties   # if ANDROID_HOME isn't picked
 
 APKs land in `app/build/outputs/apk/release/` — one per ABI. Most phones need
 `app-arm64-v8a-release.apk`; older 32-bit phones need `app-armeabi-v7a-release.apk`.
+
+Checks (also run in CI):
+
+```sh
+./gradlew testDebugUnitTest                  # every screen starts (Robolectric)
+./gradlew connectedDebugAndroidTest          # on a device/emulator: runs all 23 recipes for real
+python3 tools/check_native_libs.py "$ANDROID_HOME/ndk/27.2.12479018" 24 app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
+python3 tools/check_alignment.py app/build/outputs/apk/*/*.apk
+```
 
 The release build is signed with the local debug key so it installs directly. Use your own
 `signingConfig` before publishing to a store. The **VTLOffmp3g APK** GitHub Actions workflow
