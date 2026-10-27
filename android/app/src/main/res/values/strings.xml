@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">VTLOphp</string>
+    <string name="search_hint">Search %1$d Laravel entries</string>
+    <string name="search_section_hint">Filter %1$s</string>
+    <string name="entry_count">%1$d entries</string>
+    <string name="no_results">No entries match \"%1$s\"</string>
+    <string name="empty_section">This section has no entries in the cheatsheet yet. Open the official documentation below.</string>
+    <string name="copied">Copied: %1$s</string>
+    <string name="action_copy">Copy code</string>
+    <string name="action_copy_full">Copy code with description</string>
+    <string name="action_share">Share</string>
+    <string name="action_docs">Open documentation</string>
+    <string name="no_browser">No app can open %1$s</string>
+    <string name="about">About</string>
+    <string name="about_text">VTLOphp bundles every entry of backend/laravel.php from the Awesome Cheatsheets repository: %1$d entries in %2$d sections.\n\nTap an entry to copy it. Long-press for more actions.</string>
+</resources>

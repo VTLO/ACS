@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The app ships the cheatsheet itself, so every entry in backend/laravel.php
+// shows up in the APK without being duplicated by hand.
+def cheatsheetAssets = layout.buildDirectory.dir('generated/cheatsheet-assets')
+
+def copyCheatsheet = tasks.register('copyCheatsheet', Copy) {
+    from rootProject.file('../backend/laravel.php')
+    into cheatsheetAssets
+}
+
+android {
+    namespace 'com.acs.laravelcheatsheet'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.vtlo.vtlophp'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    sourceSets {
+        main.assets.srcDir cheatsheetAssets
+        // Unit tests parse the real cheatsheet from the repository.
+        test.resources.srcDir cheatsheetAssets
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.named('preBuild') { dependsOn copyCheatsheet }
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
