@@ -1,0 +1,6 @@
+<resources>
+    <color name="code_text">#F5F5F5</color>
+    <color name="code_background">#2E2622</color>
+    <color name="secondary_text">#B5B5B5</color>
+    <color name="header_text">#E58A68</color>
+</resources>
