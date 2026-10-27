@@ -2,14 +2,12 @@ package com.vtlo.offmp3g;
 
 import android.app.Application;
 
-import com.arthenica.ffmpegkit.FFmpegKitConfig;
-
 public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // libass (burned-in subtitles) needs a font directory on Android.
-        FFmpegKitConfig.setFontDirectory(this, "/system/fonts", null);
+        // FFmpegKit is initialised lazily on the job thread (see Job.initFFmpeg): loading its
+        // native libraries here would block startup and crash the app if they fail to load.
         Job.cleanUp(this);
     }
 }
