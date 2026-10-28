@@ -13,6 +13,7 @@ import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
+import androidx.core.content.ContextCompat;
 
 /**
  * Keeps the process alive with a progress notification while a long encode runs.
@@ -131,6 +132,7 @@ public class JobService extends Service implements Job.Listener {
             .setContentText(j == null ? "" : j.status() + " · " + j.processedTime())
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setColor(ContextCompat.getColor(this, R.color.green))
             .setContentIntent(pi);
         if (j != null) {
             double p = j.progress();

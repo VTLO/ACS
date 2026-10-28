@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,181 +10,440 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="32dp">
 
-        <TextView
-            android:id="@+id/desc"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodyLarge" />
-
-        <TextView
-            android:id="@+id/original"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@color/console_bg"
-            android:fontFamily="monospace"
-            android:padding="10dp"
-            android:textColor="@color/console_fg"
-            android:textIsSelectable="true"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/inputsHeader"
-            style="@style/SectionHeader"
-            android:text="Files" />
-
-        <LinearLayout
-            android:id="@+id/inputs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/paramsHeader"
-            style="@style/SectionHeader"
-            android:text="Parameters" />
-
-        <LinearLayout
-            android:id="@+id/params"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <TextView
-            style="@style/SectionHeader"
-            android:text="Command" />
-
-        <EditText
-            android:id="@+id/command"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:gravity="top"
-            android:importantForAutofill="no"
-            android:inputType="textMultiLine|textNoSuggestions"
-            android:minLines="2"
-            android:textSize="12sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:alpha="0.7"
-            android:text="Editable. One ffmpeg command per line, run in order. &lt;input&gt;, &lt;output&gt;… are replaced by your files when it runs. Changing a parameter rebuilds the command."
-            android:textSize="12sp" />
-
+        <!-- Top bar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/run"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Run" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cancel"
-                style="?attr/materialButtonOutlinedStyle"
+                android:id="@+id/back"
+                style="@style/Widget.VTLO.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:enabled="false"
-                android:text="Cancel" />
+                android:contentDescription="Back"
+                app:icon="@drawable/ic_back" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/reset"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/Widget.VTLO.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Reset" />
+                android:contentDescription="Reset parameters"
+                app:icon="@drawable/ic_tune" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/help"
+                style="@style/Widget.VTLO.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Cheatsheet line"
+                app:icon="@drawable/ic_help" />
         </LinearLayout>
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/progress"
+        <TextView
+            android:id="@+id/title"
+            style="@style/Text.Display"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="28sp" />
+
+        <TextView
+            android:id="@+id/desc"
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" />
+
+        <!-- Status gauge (scanner): arc + score on the left, verdict + pill on the right -->
+        <LinearLayout
+            android:id="@+id/gaugeCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="20dp">
+
+            <FrameLayout
+                android:layout_width="140dp"
+                android:layout_height="140dp">
+
+                <com.vtlo.offmp3g.GaugeView
+                    android:id="@+id/gauge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/score"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/orange"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/scoreLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Progress"
+                        android:textColor="@color/text"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ready"
+                    android:textColor="@color/green"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/pillLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Output"
+                        android:textColor="@color/text"
+                        android:textSize="17sp" />
+
+                    <TextView
+                        android:id="@+id/pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:background="@drawable/bg_pill_amber"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/on_amber"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/statusDetail"
+                    style="@style/Text.Body"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:maxLines="3"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Telemetry (spectrum analyser) -->
+        <LinearLayout
+            android:id="@+id/scopeBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:max="1000"
-            android:visibility="gone" />
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
 
-        <TextView
-            android:id="@+id/status"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Text.ScopeLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="TELEMETRY" />
+
+                <TextView
+                    style="@style/Text.Mono"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="━ fps  "
+                    android:textColor="@color/scope_yellow"
+                    android:textSize="11sp" />
+
+                <TextView
+                    style="@style/Text.Mono"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="━ kb/s"
+                    android:textColor="@color/scope_magenta"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <com.vtlo.offmp3g.ScopeView
+                android:id="@+id/scope"
+                android:layout_width="match_parent"
+                android:layout_height="170dp"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Stats (battery app) -->
+        <LinearLayout
+            android:id="@+id/stats"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium" />
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
 
+            <include
+                android:id="@+id/statTime"
+                layout="@layout/view_stat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/statSpeed"
+                layout="@layout/view_stat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/statSize"
+                layout="@layout/view_stat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- Files -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/inputsHeader"
+            style="@style/Widget.VTLO.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    style="@style/Text.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Files" />
+
+                <LinearLayout
+                    android:id="@+id/inputs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Parameters -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/paramsHeader"
+            style="@style/Widget.VTLO.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    style="@style/Text.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Parameters" />
+
+                <LinearLayout
+                    android:id="@+id/params"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Command (instrument panel) -->
+        <LinearLayout
+            android:id="@+id/commandBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                style="@style/Text.ScopeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="COMMAND" />
+
+            <EditText
+                android:id="@+id/command"
+                style="@style/Text.Mono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@null"
+                android:gravity="top"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:minLines="2"
+                android:textColor="@color/scope_yellow"
+                android:textCursorDrawable="@null" />
+
+            <TextView
+                style="@style/Text.Mono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="editable · one ffmpeg command per line · &lt;input&gt; &lt;output&gt; … become your files"
+                android:textColor="@color/scope_axis"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Run / Stop -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/run"
+            style="@style/Widget.VTLO.Button.Pill"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Run"
+            android:textSize="16sp"
+            app:icon="@drawable/ic_play"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancel"
+            style="@style/Widget.VTLO.Button.Stop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Stop"
+            android:textSize="16sp"
+            android:visibility="gone"
+            app:icon="@drawable/ic_stop"
+            app:iconGravity="textStart" />
+
+        <!-- Result -->
         <LinearLayout
             android:id="@+id/result"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:orientation="horizontal"
             android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/save"
+                style="@style/Widget.VTLO.Button.Pill"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Save…" />
+                android:text="Save"
+                app:icon="@drawable/ic_save" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/share"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/Widget.VTLO.Button.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Share" />
+                android:text="Share"
+                app:icon="@drawable/ic_share" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/open"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/Widget.VTLO.Button.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Open" />
+                android:text="Open"
+                app:icon="@drawable/ic_open" />
         </LinearLayout>
 
+        <!-- Log (instrument panel) -->
         <LinearLayout
+            android:id="@+id/logBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Text.ScopeLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="LOG" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/copyLog"
+                    style="@style/Widget.VTLO.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="Copy log"
+                    app:icon="@drawable/ic_copy"
+                    app:iconTint="@color/scope_teal" />
+            </LinearLayout>
 
             <TextView
-                style="@style/SectionHeader"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:text="Log" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/copyLog"
-                style="?attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
+                android:id="@+id/log"
+                style="@style/Text.Mono"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Copy" />
+                android:minLines="6"
+                android:text="waiting for a run…"
+                android:textIsSelectable="true"
+                android:textSize="10sp" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/log"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/console_bg"
-            android:fontFamily="monospace"
-            android:minLines="6"
-            android:padding="10dp"
-            android:textColor="@color/console_fg"
-            android:textIsSelectable="true"
-            android:textSize="10sp" />
     </LinearLayout>
 </ScrollView>

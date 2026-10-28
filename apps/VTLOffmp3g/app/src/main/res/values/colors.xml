@@ -1,8 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Launcher icon ring -->
     <color name="ic_launcher_background">#C45A36</color>
-    <color name="brand">#C45A36</color>
-    <color name="brand_dark">#8E3D22</color>
-    <color name="console_bg">#111111</color>
-    <color name="console_fg">#D7D7D7</color>
+
+    <!-- Base (battery app: near-black canvas, soft grey cards) -->
+    <color name="bg">#0F110F</color>
+    <color name="surface">#232724</color>
+    <color name="surface_high">#2F3430</color>
+    <color name="outline">#3B413C</color>
+    <color name="text">#F1F4F1</color>
+    <color name="text_dim">#A3ABA5</color>
+
+    <!-- Accents -->
+    <color name="green">#21E36A</color>
+    <color name="green_container">#173D24</color>
+    <color name="on_green">#06180C</color>
+    <color name="orange">#FF7A00</color>
+    <color name="amber">#FFAA0D</color>
+    <color name="on_amber">#2A1A00</color>
+    <color name="alert">#A30F14</color>
+    <color name="error">#FF5449</color>
+    <color name="gauge_track">#E4E9E5</color>
+
+    <!-- Instrument panels (spectrum analyser) -->
+    <color name="scope_bg">#000000</color>
+    <color name="scope_grid">#1C2420</color>
+    <color name="scope_axis">#7E8A86</color>
+    <color name="scope_yellow">#F2D21B</color>
+    <color name="scope_magenta">#D21E5A</color>
+    <color name="scope_teal">#18C59C</color>
+    <color name="scope_text">#D3DAD5</color>
+
+    <!-- Search bar (scanner) -->
+    <color name="search_bg">#FFFFFF</color>
+    <color name="search_text">#111311</color>
 </resources>
