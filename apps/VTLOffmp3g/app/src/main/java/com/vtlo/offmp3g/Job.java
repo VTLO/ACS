@@ -72,6 +72,10 @@ public final class Job {
     private volatile double durationMs = -1;
     private volatile double timeMs = 0;
     private volatile double speed = 0;
+    private volatile long outputBytes = 0;
+    /** Telemetry for the scope view: {seconds processed, fps, bitrate kb/s}. */
+    private final List<float[]> samples = new ArrayList<>();
+    private static final int MAX_SAMPLES = 400;
     private volatile int stepIndex = 0;
     private volatile long sessionId = -1;
     private volatile boolean cancelRequested;
@@ -121,6 +125,26 @@ public final class Job {
     public int stepIndex() { return stepIndex; }
     public int stepCount() { return commandLines(commandText).size(); }
     public double speed() { return speed; }
+    public long outputBytes() { return outputBytes; }
+    public double timeMs() { return timeMs; }
+
+    /** A copy of the telemetry samples, oldest first. */
+    public List<float[]> samples() {
+        synchronized (samples) {
+            return new ArrayList<>(samples);
+        }
+    }
+
+    private void addSample(float seconds, float fps, float kbps) {
+        synchronized (samples) {
+            if (!samples.isEmpty() && seconds < samples.get(samples.size() - 1)[0]) samples.clear(); // next step
+            samples.add(new float[]{seconds, Math.max(0, fps), Math.max(0, kbps)});
+            if (samples.size() > MAX_SAMPLES) {
+                // Halve the resolution instead of dropping history, so the whole run stays visible.
+                for (int i = samples.size() - 1; i > 0; i -= 2) samples.remove(i - 1);
+            }
+        }
+    }
 
     /** 0..1, or -1 when the duration is unknown. */
     public double progress() {
@@ -218,6 +242,8 @@ public final class Job {
                     s -> {
                         timeMs = s.getTime();
                         speed = s.getSpeed();
+                        outputBytes = s.getSize();
+                        addSample((float) (s.getTime() / 1000.0), s.getVideoFps(), (float) s.getBitrate());
                         notifyUpdate();
                     });
                 sessionId = session.getSessionId();

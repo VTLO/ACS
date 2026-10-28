@@ -10,6 +10,7 @@ import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -26,7 +27,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -54,7 +54,9 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
 
     private EditText command;
     private MaterialButton run, cancel, reset;
-    private LinearProgressIndicator progress;
+    private GaugeView gauge;
+    private ScopeView scope;
+    private View statTime, statSpeed, statSize;
     private TextView status, log;
     private View result;
     private Job job;
@@ -73,8 +75,20 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
             return;
         }
         setContentView(R.layout.activity_recipe);
-        setTitle(recipe.title);
-        if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((TextView) findViewById(R.id.title)).setText(recipe.title);
+        findViewById(R.id.back).setOnClickListener(v -> finish());
+        findViewById(R.id.help).setOnClickListener(v -> showCheatsheetLine());
+        findViewById(R.id.gaugeCard).setBackground(Panels.stripes(this));
+        findViewById(R.id.scopeBox).setBackground(Panels.scope(this));
+        findViewById(R.id.commandBox).setBackground(Panels.scope(this));
+        findViewById(R.id.logBox).setBackground(Panels.scope(this));
+        gauge = findViewById(R.id.gauge);
+        gauge.setSweep(270);
+        gauge.setStrokeDp(9);
+        scope = findViewById(R.id.scope);
+        statTime = setupStat(R.id.statTime, R.drawable.ic_timer, "Processed");
+        statSpeed = setupStat(R.id.statSpeed, R.drawable.ic_bolt, "Speed");
+        statSize = setupStat(R.id.statSize, R.drawable.ic_storage, "Output");
 
         pickOne = registerForActivityResult(new ActivityResultContracts.OpenDocument(),
             uri -> { if (uri != null) onPicked(Arrays.asList(uri)); });
@@ -88,15 +102,11 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
         TextView desc = findViewById(R.id.desc);
         desc.setText(recipe.description);
         desc.setVisibility(recipe.description.isEmpty() ? View.GONE : View.VISIBLE);
-        TextView original = findViewById(R.id.original);
-        original.setText(recipe.original);
-        original.setVisibility(recipe.original.isEmpty() ? View.GONE : View.VISIBLE);
 
         command = findViewById(R.id.command);
         run = findViewById(R.id.run);
         cancel = findViewById(R.id.cancel);
         reset = findViewById(R.id.reset);
-        progress = findViewById(R.id.progress);
         status = findViewById(R.id.status);
         log = findViewById(R.id.log);
         result = findViewById(R.id.result);
@@ -151,38 +161,24 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
             findViewById(R.id.inputsHeader).setVisibility(View.GONE);
             return;
         }
+        LayoutInflater inflater = LayoutInflater.from(this);
         for (Recipe.Input in : recipe.inputs) {
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(0, 0, 0, dp(8));
-
-            LinearLayout buttons = new LinearLayout(this);
-            buttons.setOrientation(LinearLayout.HORIZONTAL);
-            MaterialButton pick = new MaterialButton(this, null,
-                com.google.android.material.R.attr.materialButtonOutlinedStyle);
-            pick.setText((in.multiple ? "Add: " : "Pick: ") + in.label);
+            View row = inflater.inflate(R.layout.item_input, box, false);
+            ((TextView) row.findViewById(R.id.inputLabel)).setText(in.label);
+            MaterialButton pick = row.findViewById(R.id.inputPick);
+            pick.setText(in.multiple ? "Add" : "Pick");
             pick.setOnClickListener(v -> {
                 pendingPick = in.key;
                 String[] mimes = {in.mime};
                 if (in.multiple) pickMany.launch(mimes); else pickOne.launch(mimes);
             });
-            buttons.addView(pick);
-            if (in.multiple) {
-                MaterialButton clear = new MaterialButton(this, null,
-                    com.google.android.material.R.attr.borderlessButtonStyle);
-                clear.setText("Clear");
-                clear.setOnClickListener(v -> {
-                    picks.remove(in.key);
-                    updatePickLabel(in);
-                });
-                buttons.addView(clear);
-            }
-            row.addView(buttons);
-
-            TextView label = new TextView(this);
-            label.setAlpha(0.8f);
-            row.addView(label);
-            pickLabels.put(in.key, label);
+            View clear = row.findViewById(R.id.inputClear);
+            clear.setVisibility(in.multiple ? View.VISIBLE : View.GONE);
+            clear.setOnClickListener(v -> {
+                picks.remove(in.key);
+                updatePickLabel(in);
+            });
+            pickLabels.put(in.key, row.findViewById(R.id.inputName));
             box.addView(row);
             updatePickLabel(in);
         }
@@ -211,7 +207,7 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
         TextView label = pickLabels.get(in.key);
         List<Uri> list = picks.get(in.key);
         if (list == null || list.isEmpty()) {
-            label.setText("Nothing picked");
+            label.setText("nothing picked");
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -335,62 +331,140 @@ public class RecipeActivity extends AppCompatActivity implements Job.Listener {
         boolean running = job != null && job.state() == Job.State.RUNNING;
         boolean otherRunning = !running && Job.isRunning();
         run.setEnabled(!running && !otherRunning);
+        run.setVisibility(running ? View.GONE : View.VISIBLE);
+        cancel.setVisibility(running ? View.VISIBLE : View.GONE);
         cancel.setEnabled(running);
         reset.setEnabled(!running);
         command.setEnabled(!running);
         if (running) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        TextView score = findViewById(R.id.score);
+        TextView pillLabel = findViewById(R.id.pillLabel);
+        TextView pill = findViewById(R.id.pill);
+        TextView detail = findViewById(R.id.statusDetail);
+        // The scanner's gauge: coloured progress over a white remainder.
+        int green = color(R.color.green), track = color(R.color.gauge_track);
+
         if (job == null) {
-            progress.setVisibility(View.GONE);
+            gauge.setColors(track, green);
+            gauge.setProgress(0);
+            score.setText("0");
+            score.setTextColor(color(R.color.text));
+            status.setText(otherRunning ? "Busy" : "Ready");
+            status.setTextColor(otherRunning ? color(R.color.amber) : green);
+            pillLabel.setText("Output");
+            pill.setText(MainActivity.badge(recipe));
+            detail.setText(otherRunning ? "Another job is running: " + Job.current().recipe.title
+                : "Pick your files, then Run.");
+            findViewById(R.id.scopeBox).setVisibility(View.GONE);
+            findViewById(R.id.stats).setVisibility(View.GONE);
             result.setVisibility(View.GONE);
-            status.setText(otherRunning ? "Another job is running: " + Job.current().recipe.title : "");
             return;
         }
 
-        progress.setVisibility(running ? View.VISIBLE : View.GONE);
+        int stateColor;
         double p = job.progress();
-        if (running) {
-            if (p < 0) {
-                if (!progress.isIndeterminate()) {
-                    progress.setVisibility(View.INVISIBLE);
-                    progress.setIndeterminate(true);
-                    progress.setVisibility(View.VISIBLE);
-                }
-            } else {
-                if (progress.isIndeterminate()) {
-                    progress.setVisibility(View.INVISIBLE);
-                    progress.setIndeterminate(false);
-                    progress.setVisibility(View.VISIBLE);
-                }
-                progress.setProgressCompat((int) (p * 1000), true);
-            }
+        switch (job.state()) {
+            case RUNNING:
+                stateColor = green;
+                status.setText(p < 0 ? "Working" : "Encoding");
+                gauge.setProgress((float) p);
+                score.setText(p < 0 ? "…" : String.valueOf(Math.round(p * 100)));
+                pillLabel.setText("Speed");
+                pill.setText(job.speed() > 0 ? String.format(java.util.Locale.US, "%.2fx", job.speed()) : "—");
+                detail.setText(job.status() + "\n" + job.processedTime());
+                break;
+            case DONE:
+                stateColor = green;
+                status.setText("Done");
+                gauge.setProgress(1);
+                score.setText("100");
+                pillLabel.setText("Size");
+                pill.setText(job.output == null ? "stream" : describeSize(job.output));
+                detail.setText(job.output == null ? job.status() : job.output.getName());
+                break;
+            case CANCELLED:
+                stateColor = color(R.color.amber);
+                status.setText("Stopped");
+                gauge.setProgress((float) Math.max(0, p));
+                score.setText(p < 0 ? "–" : String.valueOf(Math.round(p * 100)));
+                pillLabel.setText("Output");
+                pill.setText("none");
+                detail.setText(job.status());
+                break;
+            default:
+                stateColor = color(R.color.orange);
+                status.setText("Failed");
+                gauge.setProgress((float) Math.max(0.02, p));
+                score.setText(p < 0 ? "!" : String.valueOf(Math.round(p * 100)));
+                pillLabel.setText("Risk");
+                pill.setText("see log");
+                detail.setText(job.status());
         }
+        gauge.setColors(track, stateColor);
+        status.setTextColor(stateColor);
+        score.setTextColor(job.state() == Job.State.FAILED ? stateColor : color(R.color.text));
 
-        StringBuilder s = new StringBuilder(job.status());
-        if (running) {
-            s.append(" · ").append(job.processedTime());
-            if (job.speed() > 0) s.append(String.format(java.util.Locale.US, " · %.2fx", job.speed()));
-        } else if (job.state() == Job.State.DONE && job.output != null) {
-            s.append(" · ").append(describeOutput(job.output));
-        }
-        status.setText(s);
+        findViewById(R.id.scopeBox).setVisibility(View.VISIBLE);
+        scope.setSamples(job.samples());
+        findViewById(R.id.stats).setVisibility(View.VISIBLE);
+        setStat(statTime, Job.formatMs(job.timeMs()));
+        setStat(statSpeed, job.speed() > 0 ? String.format(java.util.Locale.US, "%.2fx", job.speed()) : "—");
+        setStat(statSize, job.outputBytes() > 0 ? MainActivity.formatBytes(job.outputBytes())
+            : job.output != null && job.state() == Job.State.DONE ? describeSize(job.output) : "—");
 
         result.setVisibility(job.state() == Job.State.DONE && job.output != null ? View.VISIBLE : View.GONE);
         findViewById(R.id.open).setVisibility(job.output != null && job.output.isFile() ? View.VISIBLE : View.GONE);
 
         String text = job.log();
         if (text.length() > 12_000) text = "…" + text.substring(text.length() - 12_000);
-        log.setText(text);
+        log.setText(text.isEmpty() ? "waiting for ffmpeg…" : text);
     }
 
-    private static String describeOutput(File f) {
+    private static String describeSize(File f) {
         if (f.isDirectory()) {
             String[] names = f.list();
             return (names == null ? 0 : names.length) + " files";
         }
-        double mb = f.length() / (1024.0 * 1024.0);
-        return f.getName() + " (" + String.format(java.util.Locale.US, "%.2f MB", mb) + ")";
+        return MainActivity.formatBytes(f.length());
+    }
+
+    private View setupStat(int id, int icon, String label) {
+        View v = findViewById(id);
+        ((android.widget.ImageView) v.findViewById(R.id.statIcon)).setImageResource(icon);
+        ((TextView) v.findViewById(R.id.statLabel)).setText(label);
+        return v;
+    }
+
+    private static void setStat(View stat, String value) {
+        ((TextView) stat.findViewById(R.id.statValue)).setText(value);
+    }
+
+    private int color(int res) {
+        return androidx.core.content.ContextCompat.getColor(this, res);
+    }
+
+    private void showCheatsheetLine() {
+        TextView text = new TextView(this);
+        text.setText(recipe.original.isEmpty() ? recipe.buildCommand(recipe.defaultParams()) : recipe.original);
+        text.setTextIsSelectable(true);
+        text.setTypeface(android.graphics.Typeface.MONOSPACE);
+        text.setTextSize(12);
+        text.setTextColor(color(R.color.scope_yellow));
+        int pad = dp(16);
+        text.setPadding(pad, pad, pad, pad);
+        text.setBackground(Panels.scope(this));
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(24), dp(8), dp(24), 0);
+        box.addView(text);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("From tools/ffmpeg.sh")
+            .setMessage(recipe.description.isEmpty() ? null : recipe.description)
+            .setView(box)
+            .setPositiveButton("OK", null)
+            .show();
     }
 
     // --- export ----------------------------------------------------------------------------------
