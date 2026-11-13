@@ -79,7 +79,31 @@ public class ScreenshotTest {
         capture(recipe("subtitles"), "6-recipe-failed");
     }
 
+    @Test
+    public void onboarding() throws Exception {
+        Activity a = Robolectric.buildActivity(OnboardingActivity.class).setup().get();
+        androidx.viewpager2.widget.ViewPager2 pager = a.findViewById(R.id.pager);
+        for (int i = 0; i < 5; i++) {
+            pager.setCurrentItem(i, false);
+            // Let the step's animation run for a while before capturing it.
+            ShadowLooper.idleMainLooper(i == 4 ? 900 : 1700, java.util.concurrent.TimeUnit.MILLISECONDS);
+            captureWindow(a, "7-guide-" + (i + 1));
+        }
+    }
+
     // ------------------------------------------------------------------------------------------
+
+    /** Draws the activity's window as on screen. */
+    private static void captureWindow(Activity activity, String name) throws Exception {
+        View root = activity.getWindow().getDecorView();
+        Bitmap bmp = Bitmap.createBitmap(root.getWidth(), root.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bmp);
+        root.draw(c);
+        OUT.mkdirs();
+        try (FileOutputStream out = new FileOutputStream(new File(OUT, name + ".png"))) {
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+        }
+    }
 
     private Activity recipe(String id) {
         Intent i = new Intent(ApplicationProvider.getApplicationContext(), RecipeActivity.class)

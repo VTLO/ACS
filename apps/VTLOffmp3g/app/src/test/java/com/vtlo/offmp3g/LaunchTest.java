@@ -22,6 +22,31 @@ public class LaunchTest {
     }
 
     @Test
+    public void frenchGuideOpensOnFirstLaunchOnly() {
+        MainActivity first = Robolectric.buildActivity(MainActivity.class).setup().get();
+        org.junit.Assert.assertTrue(startedGuide(first));
+
+        // Finishing the guide marks it as seen.
+        OnboardingActivity guide = Robolectric.buildActivity(OnboardingActivity.class).setup().get();
+        guide.findViewById(R.id.skip).performClick();
+        org.junit.Assert.assertTrue(guide.isFinishing());
+
+        MainActivity second = Robolectric.buildActivity(MainActivity.class).setup().get();
+        org.junit.Assert.assertFalse(startedGuide(second));
+    }
+
+    /** Whether the activity launched the guide (it may also launch the notification permission prompt). */
+    private static boolean startedGuide(android.app.Activity activity) {
+        org.robolectric.shadows.ShadowActivity shadow = org.robolectric.Shadows.shadowOf(activity);
+        for (Intent i = shadow.getNextStartedActivity(); i != null; i = shadow.getNextStartedActivity()) {
+            if (i.getComponent() != null && i.getComponent().getClassName().equals(OnboardingActivity.class.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Test
     public void everyRecipeScreenStarts() {
         for (Recipe r : Recipe.ALL) {
             Intent i = new Intent(ApplicationProvider.getApplicationContext(), RecipeActivity.class)

@@ -14,6 +14,16 @@
 
 </div>
 
+## 📲 VTLOffmp3g (par VTLO)
+
+Les commandes de [`tools/ffmpeg.sh`](tools/ffmpeg.sh) en application, avec un guide animé en français au premier lancement.
+
+- **Android** : [`downloads/VTLOffmp3g-1.4-arm64-v8a.apk`](downloads/VTLOffmp3g-1.4-arm64-v8a.apk) (anciens téléphones 32 bits : [`armeabi-v7a`](downloads/VTLOffmp3g-1.4-armeabi-v7a.apk))
+- **PC (navigateur)** : [`downloads/VTLOffmp3g-web-1.4.zip`](downloads/VTLOffmp3g-web-1.4.zip), à décompresser puis lancer `Lancer-VTLOffmp3g.bat` (Windows) ou `lancer.sh` (macOS / Linux)
+
+Détails et empreintes : [`downloads/`](downloads/). Sources : [`apps/VTLOffmp3g`](apps/VTLOffmp3g) (Android) et [`apps/VTLOffmp3g-web`](apps/VTLOffmp3g-web) (web).
+
+
 ---
 
 ## 🤔 Why Awesome-Cheatsheets?

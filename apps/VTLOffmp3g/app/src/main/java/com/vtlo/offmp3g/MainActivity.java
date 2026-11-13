@@ -107,6 +107,10 @@ public class MainActivity extends AppCompatActivity implements Job.Listener {
         });
         filter();
 
+        if (savedInstanceState == null && OnboardingActivity.shouldShow(this)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+        }
+
         crashReport = CrashReport.collect(this);
         View banner = findViewById(R.id.crashBanner);
         banner.setVisibility(crashReport != null ? View.VISIBLE : View.GONE);
@@ -326,6 +330,8 @@ public class MainActivity extends AppCompatActivity implements Job.Listener {
                 + "Opus, LAME, libass.\n\nPick a recipe, choose your files, adjust the parameters "
                 + "or edit the command itself, then Run.")
             .setPositiveButton("OK", null)
+            .setNeutralButton("Revoir le guide", (d, w) ->
+                startActivity(new Intent(this, OnboardingActivity.class)))
             .show();
     }
 
