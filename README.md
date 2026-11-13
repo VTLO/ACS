@@ -1,177 +1,78 @@
 <div align="center">
 
-[![AWESOME CHEATSHEETS LOGO](_design/cover_github@2x.png)](https://lecoupa.github.io/awesome-cheatsheets/)
+<img src="apps/VTLOffmp3g/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="">
 
-<a href="https://trendshift.io/repositories/5584" target="_blank">
-  <img src="https://trendshift.io/api/badge/repositories/5584" alt="LeCoupa%2Fawesome-cheatsheets | Trendshift" width="250" height="55"/>
-</a>
+# VTLOffmp3g
 
-[![Awesome](https://awesome.re/badge.svg)](https://awesome.re) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/LeCoupa/awesome-cheatsheets/blob/master/LICENSE)
+Toutes les commandes de la cheatsheet [`tools/ffmpeg.sh`](tools/ffmpeg.sh) en application,
+sur téléphone Android et sur PC, sans connexion et sans envoyer vos fichiers.
 
-**WEBSITE DIRECTORY**: [Available here](https://lecoupa.github.io/awesome-cheatsheets/)
-
-> 📚 Awesome cheatsheets for popular programming languages, frameworks and development tools. They include everything you should know in one single file.
+par **VTLO**
 
 </div>
 
-## 📲 VTLOffmp3g (par VTLO)
+## 📲 Télécharger
 
-Les commandes de [`tools/ffmpeg.sh`](tools/ffmpeg.sh) en application, avec un guide animé en français au premier lancement.
+| | Fichier | |
+|---|---|---|
+| **Android** (téléphones récents) | [`VTLOffmp3g-1.4-arm64-v8a.apk`](downloads/VTLOffmp3g-1.4-arm64-v8a.apk) | 46 Mo |
+| **Android** (anciens téléphones 32 bits) | [`VTLOffmp3g-1.4-armeabi-v7a.apk`](downloads/VTLOffmp3g-1.4-armeabi-v7a.apk) | 46 Mo |
+| **PC** (Windows, macOS, Linux) | [`VTLOffmp3g-web-1.4.zip`](downloads/VTLOffmp3g-web-1.4.zip) | 10 Mo |
 
-- **Android** : [`downloads/VTLOffmp3g-1.4-arm64-v8a.apk`](downloads/VTLOffmp3g-1.4-arm64-v8a.apk) (anciens téléphones 32 bits : [`armeabi-v7a`](downloads/VTLOffmp3g-1.4-armeabi-v7a.apk))
-- **PC (navigateur)** : [`downloads/VTLOffmp3g-web-1.4.zip`](downloads/VTLOffmp3g-web-1.4.zip), à décompresser puis lancer `Lancer-VTLOffmp3g.bat` (Windows) ou `lancer.sh` (macOS / Linux)
+Installation et empreintes SHA-256 : [`downloads/`](downloads/).
+Au premier lancement, un court guide animé en français explique comment s'en servir.
 
-Détails et empreintes : [`downloads/`](downloads/). Sources : [`apps/VTLOffmp3g`](apps/VTLOffmp3g) (Android) et [`apps/VTLOffmp3g-web`](apps/VTLOffmp3g-web) (web).
+## ✨ Fonctions
 
+- **24 recettes** couvrant toute la cheatsheet : conversion MP4 / WebM (VP8 avec presets libvpx, VP9), remux,
+  compression CRF et deux passes, extraction et remplacement de l'audio, GIF optimisé, découpe et assemblage,
+  redimensionnement, recadrage, filigrane, sous-titres incrustés, captures d'images, streaming RTMP (Android),
+  plus une commande libre.
+- Choix des fichiers, paramètres modifiables et **commande FFmpeg éditable** avant de lancer.
+- Suivi en direct : jauge de progression, **télémétrie** (fps et débit), vitesse, taille, journal.
+- Résultat à enregistrer, partager ou ouvrir (Android), ou à prévisualiser et télécharger (PC).
+- Android : rapport de plantage au lancement suivant, travail en arrière-plan avec notification.
+- PC : FFmpeg tourne dans le navigateur (WebAssembly), les fichiers ne quittent jamais l'ordinateur.
 
----
+## 🗂️ Organisation
 
-## 🤔 Why Awesome-Cheatsheets?
+| Dossier | Contenu |
+|---|---|
+| [`apps/VTLOffmp3g`](apps/VTLOffmp3g) | Application Android (Java, FFmpegKit full-gpl, Android 7 et plus) |
+| [`apps/VTLOffmp3g-web`](apps/VTLOffmp3g-web) | Application PC dans le navigateur (ffmpeg.wasm) ; `dist/` est prêt à l'emploi |
+| [`downloads/`](downloads) | APK et zip PC prêts à installer |
+| [`tools/ffmpeg.sh`](tools/ffmpeg.sh) | La cheatsheet FFmpeg dont sont tirées les recettes |
+| [`.github/workflows`](.github/workflows) | Construction des APK à chaque modification, publication web sur GitHub Pages |
 
-I usually make a cheat sheet when I want to improve my skills in a programming language, a framework or a development tool. [I started doing these kinds of things a long time ago on Gist](https://gist.github.com/LeCoupa). To better keep track of the history and to let people contribute, I re-organized all of them into this single repository. Most of the content is coming from official documentation and some books I have read.
+Les recettes sont définies une seule fois, dans
+[`Recipe.java`](apps/VTLOffmp3g/app/src/main/java/com/vtlo/offmp3g/Recipe.java) ;
+l'application web les exporte de là au moment de la construction.
 
-Feel free to take a look. You might learn new things. They have been designed to provide a quick way to assess your knowledge and to save you time.
+## 🛠️ Construire
 
----
+**Android** (JDK 17+, Android SDK, `patchelf`) :
 
-## 📚 Table of Contents
+```sh
+cd apps/VTLOffmp3g
+./gradlew assembleRelease        # APK dans app/build/outputs/apk/release/
+./gradlew testDebugUnitTest      # tests (dont rendus d'écran dans app/build/screenshots)
+```
 
-### 📃 Languages
+**PC** (Python 3, JDK, npm) :
 
-<details>
-<summary>View cheatsheets</summary>
+```sh
+cd apps/VTLOffmp3g-web
+python3 build.py                 # écrit dist/
+python3 dist/serve.py            # ouvre l'application sur http://localhost:8765/
+```
 
-#### Command line interface
-- [Bash](languages/bash.sh)
+Détails : [`apps/VTLOffmp3g/README.md`](apps/VTLOffmp3g/README.md) et
+[`apps/VTLOffmp3g-web/README.md`](apps/VTLOffmp3g-web/README.md).
 
-#### Imperative
-- [C](languages/C.txt)
-- [C#](languages/C%23.txt)
-- [Go](languages/golang.md)
-- [Java](languages/java.md)
-- [PHP](languages/php.php)
-- [Python](languages/python.md)
-- [XML](languages/XML.md)
+## 📄 Licences
 
-#### Functional
-- [JavaScript](languages/javascript.js)
-- [Typescript](languages/typescript.md)
-
-</details>
-
----
-
-### 📦 Backend
-
-<details>
-<summary>View cheatsheets</summary>
-
-#### PHP
-- [Laravel](backend/laravel.php)
-
-#### Python
-- [Django](backend/django.py)
-
-#### JavaScript
-- [Adonis.js](backend/adonis.js)
-- [Express.js](backend/express.js)
-- [Feathers.js](backend/feathers.js)
-- [Moleculer](backend/moleculer.js)
-- [Node.js](backend/node.js)
-- [Sails.js](backend/sails.js)
-
-</details>
-
----
-
-
-### 🌐 Frontend
-
-<details>
-<summary>View cheatsheets</summary>
-
-#### Basics
-- [HTML5](frontend/html5.html)
-- [CSS3](frontend/css3.css)
-- [Typescript](frontend/typescript.ts)
-
-#### Frameworks
-- [React.js](frontend/react.js)
-- [Vue.js](frontend/vue.js)
-- [Tailwind.css](frontend/tailwind.css)
-- [Ember.js](frontend/ember.js)
-- [Angular (2+)](frontend/angular.js)
-- [AngularJS](frontend/angularjs.js)
-</details>
-
----
-
-### 🗃️ Databases
-
-<details>
-<summary>View cheatsheets</summary>
-
-#### SQL
-- [MySQL](databases/mysql.sh)
-
-#### NoSQL
-- [MongoDB](databases/mongodb.sh)
-- [Redis](databases/redis.sh)
-
-</details>
-
----
-
-### 🔧 Tools
-
-<details>
-<summary>View cheatsheets</summary>
-
-#### Development
-- [cURL](tools/curl.sh)
-- [Code Review](tools/code_review.md)
-- [Drush](tools/drush.sh)
-- [Elasticsearch](tools/elasticsearch.js)
-- [Emmet](tools/emmet.md)
-- [FFmpeg](tools/ffmpeg.sh)
-- [Git](tools/git.sh)
-- [jq](tools/jq.sh)
-- [Puppeteer](tools/puppeteer.js)
-- [Sublime Text](tools/sublime_text.md)
-- [VIM](tools/vim.txt)
-- [Visual Studio Code](tools/vscode.md)
-- [Xcode](tools/xcode.txt)
-
-#### Infrastructure
-- [AWS CLI](tools/aws.sh)
-- [Docker](tools/docker.sh)
-- [GCP CLI](tools/gcp.md)
-- [Heroku CLI](tools/heroku.sh)
-- [Kubernetes](tools/kubernetes.md)
-- [macOS](tools/macos.sh)
-- [Nanobox Boxfile](tools/nanobox_boxfile.yml)
-- [Nanobox CLI](tools/nanobox_cli.sh)
-- [Nginx](tools/nginx.sh)
-- [PM2](tools/pm2.sh)
-- [Ubuntu](tools/ubuntu.sh)
-- [Firebase CLI](tools/firebase_cli.md)
-
-</details>
-
----
-
-## 🙌🏼 How to Contribute?
-
-You are more than welcome to contribute and build your own cheat sheet for your favorite programming language, framework or development tool. Just submit changes via pull request and I will review them before merging.
-
----
-
-## 👩‍💻👨‍💻 Our valuable Contributors
-
-<div align="center">
-
-<a href="https://github.com/LeCoupa/awesome-cheatsheets/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=LeCoupa/awesome-cheatsheets" />
-</a>
-
-</div>
+- FFmpeg (FFmpegKit full-gpl sur Android, ffmpeg.wasm sur PC) inclut x264 et est sous **GPL** : les applications
+  distribuées le sont donc aussi.
+- [`tools/ffmpeg.sh`](tools/ffmpeg.sh) provient de [awesome-cheatsheets](https://github.com/LeCoupa/awesome-cheatsheets),
+  sous licence MIT ([`LICENSE`](LICENSE)).
+- Police DejaVu Sans (version PC) : licence Bitstream Vera.
