@@ -29,6 +29,10 @@
         </activity>
 
         <activity
+            android:name=".OnboardingActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
+
+        <activity
             android:name=".RecipeActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:parentActivityName=".MainActivity"
